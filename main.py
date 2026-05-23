@@ -87,9 +87,9 @@ test_text = test.apply(build_sequence, axis=1)
 # =========================
 vectorizer = TfidfVectorizer(
     analyzer="char",
-    ngram_range=(3, 5),
+    ngram_range=(3, 6),
     min_df=2,
-    max_features=50000
+    max_features=100000
 )
 
 X_train = vectorizer.fit_transform(train_text)
@@ -130,6 +130,23 @@ for fold, (tr_idx, val_idx) in enumerate(skf.split(X_train, y)):
 # overall CV score
 oof_pred = oof.argmax(axis=1)
 print("\nCV Macro F1:", f1_score(y, oof_pred, average="macro"))
+
+# =========================
+# HOLDOUT CHECK (NEW ADDITION)
+# =========================
+from sklearn.model_selection import train_test_split
+
+X_tr, X_val, y_tr, y_val = train_test_split(
+    X_train, y,
+    test_size=0.2,
+    random_state=42,
+    stratify=y
+)
+
+model.fit(X_tr, y_tr)
+pred = model.predict(X_val)
+
+print("Holdout F1:", f1_score(y_val, pred, average="macro"))
 
 # =========================
 # FINAL TRAIN
