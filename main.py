@@ -64,7 +64,7 @@ def build_sequence(row):
     length = str(len(seq))
 
     # boosted gene signal + length signal
-    return f"{seq} V{v} V{v} J{j} J{j} LEN{length}".strip()
+    return f"{seq} V{v} V{v} V{v} J{j} J{j} J{j} LEN{length}".strip()
 
 
 # =========================
@@ -86,8 +86,8 @@ test_text = test.apply(build_sequence, axis=1)
 # VECTORIZE (IMPROVED TF-IDF)
 # =========================
 vectorizer = TfidfVectorizer(
-    analyzer="char_wb",
-    ngram_range=(2, 6),
+    analyzer="char",
+    ngram_range=(3, 6),
     min_df=2,
     max_df=0.9,
     max_features=120000,
@@ -106,7 +106,7 @@ model = LogisticRegression(
     class_weight="balanced",
     multi_class="multinomial",
     n_jobs=-1,
-    C=0.7
+    C=1.0
 )
 
 # =========================
