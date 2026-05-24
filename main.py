@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 import re
 
+import matplotlib.pyplot as plt
+fold_scores = []
+
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -63,7 +66,6 @@ def build_sequence(row):
 
     length = str(len(seq))
 
-    # boosted gene signal + length signal
     return f"{seq} V{v} V{v} V{v} J{j} J{j} J{j} LEN{length}".strip()
 
 
@@ -129,6 +131,9 @@ for fold, (tr_idx, val_idx) in enumerate(skf.split(X_train, y)):
 
     val_pred = preds.argmax(axis=1)
     f1 = f1_score(y_val, val_pred, average="macro")
+
+    fold_scores.append(f1)
+
     print("Macro F1:", f1)
 
 oof_pred = oof.argmax(axis=1)
@@ -148,6 +153,25 @@ model.fit(X_tr, y_tr)
 pred = model.predict(X_val)
 
 print("Holdout F1:", f1_score(y_val, pred, average="macro"))
+
+# =========================
+# F1 GRAPH
+# =========================
+plt.figure()
+
+plt.plot(range(1, len(fold_scores) + 1), fold_scores, marker="o")
+plt.axhline(np.mean(fold_scores), linestyle="--")
+
+plt.title("Cross-Validation Macro F1 per Fold")
+plt.xlabel("Fold")
+plt.ylabel("Macro F1")
+
+plt.ylim(0, 1)
+plt.grid(True)
+
+plt.show()
+
+print("Mean CV F1:", np.mean(fold_scores))
 
 # =========================
 # FINAL TRAIN
