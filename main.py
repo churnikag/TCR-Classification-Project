@@ -44,9 +44,9 @@ def map_label(text):
     return None
 
 
-# =========================
+# ========================
 # SEQUENCE CLEANING
-# =========================
+# ========================
 def clean_seq(seq):
     if pd.isna(seq):
         return ""
