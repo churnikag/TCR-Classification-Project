@@ -1,58 +1,222 @@
-# TCR Source Classification Project
+TCR SOURCE CLASSIFICATION PROJECT (TF-IDF + LOGISTIC REGRESSION)
 
-Build a multi-class TCR source classifier.
+======================================================================
 
-Each TCR belongs to one of four source categories based on what its cognate antigen is associated with. The data in this repository is the public training set only; final evaluation uses a held-out TCR set that is not included here.
+OVERVIEW
 
-## Data
+This project builds a machine learning system that classifies T Cell Receptor (TCR) sequences into one of four biological source categories:
 
-The training data is provided as a single CSV file at `data/TCR-Processed-Raw.csv`. The file is mostly raw and uncleaned. It contains inconsistent formatting, a long-tail distribution of source pathologies, and many labels that may or may not map to one of the four target classes. Cleaning the data, deciding which pathologies belong to which class, handling ambiguous or duplicate labels, and choosing what to drop are part of the task.
+viral
+bacterial
+cancer
+autoimmune
 
-The relevant columns are:
+The model uses:
 
-- `CDR3β` — the CDR3β amino acid sequence
-- `Vβ` — the Vβ gene (may be missing)
-- `Jβ` — the Jβ gene (may be missing)
-- `Pathology` — the source pathology label (raw, uncleaned)
+CDR3β amino acid sequences
+Vβ and Jβ gene annotations (when available)
+Character-level TF-IDF features
+Logistic Regression classifier
+Stratified cross-validation
+Holdout validation
 
-The cognate antigen sequence itself is **not** provided.
+The goal is to predict the biological origin of immune responses from sequence patterns alone.
 
-Target classes:
+======================================================================
 
-- `viral`
-- `bacterial`
-- `cancer`
-- `autoimmune`
+PROBLEM SUMMARY
 
-## Challenge
+Each TCR sequence represents a receptor from the immune system. These receptors recognize antigens from viruses, bacteria, tumors, or self-antigens.
 
-Train a model that predicts the source category for each TCR.
+Task:
+Predict the source category of a TCR using sequence + optional gene information.
 
-The submitted model must be able to make predictions in both input modes:
+======================================================================
 
-- **sequence only**, when only the CDR3β sequence is provided
-- **sequence plus genes**, when the CDR3β sequence is provided alongside Vβ and/or Jβ gene annotations
+TOOLS USED (WHAT EACH ONE DOES)
 
-The model should handle missing V and/or J gene information gracefully, since a substantial fraction of the training data is missing one or both.
+PYTHON
+Main programming language used for the entire project.
 
-There is no required architecture. Handcrafted physicochemical features, classical machine learning, position-specific scoring, k-mer encodings, pretrained protein or TCR language model embeddings, sequence models, and hybrid approaches are all valid if the result is reproducible and scientifically justified.
+PANDAS
+Loads CSV files
+Handles tabular data
+Used for cleaning labels and building datasets
 
-You may not use any model or dataset that was trained directly on labels overlapping the held-out test set. Any additional TCR-epitope database used by your final model must be disclosed and justified.
+NUMPY
+Handles numerical arrays
+Stores feature matrices and model outputs
 
-## Evaluation
+REGEX (re)
+Cleans amino acid sequences
+Removes invalid characters
 
-Evaluation is four-class classification on a held-out test set. The held-out set is restricted to TCRs whose source pathology clearly maps to one of the four target classes, so you do not need to handle an "other" category at inference time. Each submission will be evaluated separately in both input modes: sequence only and sequence plus genes.
+SCIKIT-LEARN (sklearn)
+Machine learning library used for:
 
-Submissions should produce one score or probability per class for each TCR in either mode.
+* TfidfVectorizer → converts sequences into numeric features
+* LogisticRegression → classification model
+* StratifiedKFold → cross-validation
+* train_test_split → validation split
+* f1_score → evaluation metric
 
-Primary metric:
+======================================================================
 
-- macro F1 across classes
+TF-IDF (CHARACTER N-GRAMS)
 
-Secondary metrics:
+Converts sequences into numerical features by breaking them into overlapping character chunks.
 
-- micro F1
-- per-class F1
-- accuracy
+Example:
+CDR3: CASSLGQETQYF
+→ "CAS", "ASS", "SSL", "SLG", ...
 
-Predicted probabilities are preferred so decision thresholds can be applied consistently across submissions.
+This captures local biological motifs in sequences.
+
+======================================================================
+
+DATA DESCRIPTION
+
+INPUT FILES:
+
+TCR-Processed-Raw.csv (training)
+test_set.csv (testing)
+
+IMPORTANT COLUMNS:
+
+CDR3.beta.aa
+Main amino acid sequence used for prediction.
+
+TRBV
+V gene segment (optional signal).
+
+TRBJ
+J gene segment (optional signal).
+
+Pathology
+Raw biological label (needs cleaning).
+
+======================================================================
+
+LABEL CLEANING
+
+Raw labels are messy, so they are mapped into 4 classes:
+
+viral → influenza, CMV, HIV, EBV, SARS, etc.
+bacterial → tuberculosis, E. coli, etc.
+cancer → melanoma, tumor, TAA, etc.
+autoimmune → diabetes, Parkinson’s, self-reactive diseases
+
+Unclear labels are removed.
+
+======================================================================
+
+FEATURE ENGINEERING
+
+Each sample is converted into a single text string:
+
+CDR3 sequence + repeated gene signals + length token
+
+Example:
+CASSLGQETQYF VTRBV VTRBV VTRBV JTRBJ JTRBJ JTRBJ LEN
+
+Why this works:
+
+Repeating genes increases their importance
+Length adds biological context
+Combines sequence + immune information
+
+======================================================================
+
+MODEL
+
+LOGISTIC REGRESSION
+
+A linear classifier that:
+
+Works well with sparse TF-IDF data
+Is fast and stable
+Handles multi-class classification
+
+Settings:
+
+class_weight="balanced" (handles imbalance)
+multi_class="multinomial"
+
+======================================================================
+
+CROSS VALIDATION
+
+Stratified K-Fold (5 splits)
+
+Splits dataset into 5 parts
+Keeps class distribution balanced
+Trains and validates across all folds
+
+Final score = average performance
+
+======================================================================
+
+HOLDOUT VALIDATION
+
+80% training
+20% validation
+
+Used to check real-world performance and prevent overfitting.
+
+======================================================================
+
+FINAL PIPELINE
+
+Load dataset
+Clean labels
+Extract sequences
+Build feature strings
+Convert to TF-IDF vectors
+Train Logistic Regression model
+Run cross-validation
+Run holdout validation
+Train final model on full data
+Predict test set
+
+======================================================================
+
+PROJECT PROGRESSION (COMMITS EXPLAINED)
+
+FIRST COMMIT – CONNECTIVITY TEST
+Initial repository setup and connectivity check
+Ensured GitHub repo was linked and working correctly
+
+BUILD STARTING CODE (PROMPT GENERATED)
+Created the first full working main.py using a prompt
+Set up baseline pipeline structure:
+data loading → preprocessing → TF-IDF → model training
+
+FEATURE ENGINEERING / MODEL IMPROVEMENT
+increased max_features → 100000
+changed ngram_range → (3,6)
+Improved feature representation for biological patterns
+Made model capture richer sequence motifs
+
+FINAL TF-IDF OPTIMIZATION
+changed analyzer = "char" instead of "char_wb"
+Improved raw character-level pattern capture
+Better handling of full sequence boundaries
+
+======================================================================
+
+LIMITATIONS
+
+TF-IDF cannot capture deep biological structure
+No protein language model used
+Gene annotations are missing in some samples
+Label mapping is rule-based (not perfect)
+Cannot model long-range biological interactions
+
+======================================================================
+
+ASSUMPTIONS
+
+Pathology labels are mostly correct
+CDR3 sequence is sufficient signal
+Missing gene data does not heavily bias results
+Train/test distributions are similar

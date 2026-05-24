@@ -7,9 +7,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 
-# =========================
+# ========================
 # CONFIG
-# =========================
+# ========================
 TRAIN_PATH = "data/TCR-Processed-Raw.csv"
 TEST_PATH = "data/test_set.csv"
 OUTPUT_PATH = "submission.csv"
